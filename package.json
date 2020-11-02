@@ -1,6 +1,6 @@
 {
-  "name": "to-create-a-better-debugging",
-  "version": "1.0.0",
+  "name": "flow-debugger",
+  "version": "0.0.1",
   "description": "",
   "keywords": [],
   "main": "src/index.tsx",
