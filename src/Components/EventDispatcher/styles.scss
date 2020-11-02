@@ -1,0 +1,18 @@
+.eventDispatcher {
+    margin-bottom: 1em;
+}
+
+
+.validationMessages {
+    margin: 0;
+    padding-left: 1.3em;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 12px;
+
+    .valid {
+        color: darkgreen;
+    }
+    .invalid {
+        color: darkred;
+    }
+}

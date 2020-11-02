@@ -1,0 +1,100 @@
+@import './Components/ActionControl/styles';
+@import './Components/EventName/styles';
+@import './Components/EventDispatcher/styles';
+
+.App {
+  display: flex;
+}
+
+
+
+
+.flow {
+  font-family: Verdana, Geneva, Tahoma, sans-serif;
+  color: #333;
+  margin-bottom: 0.75em;
+
+  .header {
+    .title {
+      font-size: 15px;
+      margin-bottom: 0.25em;
+    }
+    .description {
+      font-size: 13px;
+    }
+  }
+  .sections {
+    display: flex;
+    flex-wrap: nowrap;
+    margin-left: 0.5em;
+
+    .section:not(:first-child) {
+      margin-left: 0.3em;
+    }
+  }
+}
+
+.section {
+  .title {
+    height: 1.3em;
+    font-size: 12px;
+    border-bottom: 1px solid gray;
+    margin-bottom: 5px;
+  }
+
+  .title:empty {
+    border-color: transparent;
+  }
+  .reactions {
+    display: flex;
+    flex-wrap: nowrap;
+  }
+  .reactions >*:not(:first-child) {
+    margin-left: 0.3em;
+  }
+}
+
+.bid {
+  display: inline-block;
+  padding: 2px 5px;
+  font-size: 11px;
+  border: 1px solid black;
+  border-radius: 3px;
+
+  &.pastHighlightActionIndex {
+    opacity: 0.4;
+  }
+
+  &.current {
+    font-weight: bold;
+  }
+  
+  &.wait {
+    background-color: #b1d3f6;
+    border-color: #6c8297;
+  }
+  &.on {
+    background-color: #b1d3f6;
+    border-color: #5e7183
+  }
+  &.set {
+    background-color: #ffb87a;
+    border-color: #8a6341
+  }
+  &.request {
+    background-color: #fff9b2;
+    border-color: #b9b682;
+  }
+  &.trigger {
+    background-color: #c7a2ce;
+    border-color: #856c8a;
+  }
+  &.extend {
+    background-color: #ecb6be;
+    border-color: #c25364;
+  }
+  &.pending {
+    border-style: dashed;
+    border-color: black;
+  }
+}  
