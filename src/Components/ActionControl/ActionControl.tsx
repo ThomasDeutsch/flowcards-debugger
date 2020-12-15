@@ -1,8 +1,7 @@
 import * as React from "react";
-import { Action, DispatchActions, ActionType, EventId } from '@flowcards/react';
 import { EventName } from '../EventName/EventName';
 import { EventDispatcher } from '../EventDispatcher/EventDispatcher';
-import { ScenariosContext } from '@flowcards/core';
+import { Action, ActionType, ActionWithId, ScenariosContext, ScenariosDispatch } from '@flowcards/core';
 
 
 
@@ -20,29 +19,29 @@ function delay(ms: number, value?: any) {
     return new Promise(resolve => setTimeout(() => resolve(value), ms));
 }
 
-function getAction(action: Action, index: number, actions: Action[]) {
+function getAction(action: Action, index: number, actions: ActionWithId[]): ActionWithId {
     if(action.resolveActionId) {
         const resolveAction = actions[action.resolveActionId];
         if(!resolveAction) {
-            return action
+            return action as ActionWithId;
         }
         action.payload = () => delay(resolveAction.resolve!.requestDuration, resolveAction.payload);
     }
-    return action;
+    return action as ActionWithId;
 }
 
 
 
-function startReplay(dispatchActions: DispatchActions, actions: Action[]) {
+function startReplay(dispatchActions: ScenariosDispatch, actions: ActionWithId[]) {
     const replayActions = actions.slice(0, actions.length + 1);
-    const acts = replayActions.map(getAction).filter(a => !(a.type === ActionType.resolved && a.resolve?.isResolvedExtend === false)); // do not replay the extend-resolve!
-    dispatchActions(acts);
+    const actionsWithId = replayActions.map(getAction).filter(a => !(a.type === ActionType.resolve && a.resolve?.isResolvedExtend === false)); // do not replay the extend-resolve!
+    dispatchActions({type: 'replay', actions: actionsWithId});
 }
 
 
 interface ActionControlProps {
     context: ScenariosContext;
-    dispatchActions: DispatchActions;
+    dispatchActions: ScenariosDispatch;
     setHighlightActionIndex: (x: number | undefined) => void;
     highlightActionIndex?: number;
 }

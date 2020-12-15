@@ -1,4 +1,4 @@
-import { Bid, BidType, EventContext, EventId, EventMap } from "@flowcards/react";
+import { Bid, BidType, EventContext, EventId, EventMap } from "@flowcards/core";
 import * as React from "react";
 
 interface EventDispatcherProps {
@@ -12,9 +12,9 @@ export function EventDispatcher({bids, event}: EventDispatcherProps) {
     const validation = selectedEvent && event(selectedEvent).validate(payload);
     const dispatch = selectedEvent && event(selectedEvent) ? event(selectedEvent).dispatch : undefined
 
-    let waits: any[] = [];
-    bids.wait?.forEach((eventId) => {
-        waits.push(<button onClick={() => selectEvent(eventId)}>{eventId.name} {eventId.key}</button>);
+    let askFors: any[] = [];
+    bids.askFor?.forEach((eventId) => {
+        askFors.push(<button onClick={() => selectEvent(eventId)}>{eventId.name} {eventId.key}</button>);
     });
  
     const input = selectedEvent ? <div>
@@ -26,7 +26,7 @@ export function EventDispatcher({bids, event}: EventDispatcherProps) {
     </div> : null
 
     return <div className="eventDispatcher">
-        {waits}
+        {askFors}
         {input}
         <ul className="validationMessages">
             {validation?.required.map(x => <li>{x.map(y => 

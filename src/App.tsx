@@ -1,18 +1,25 @@
 import * as React from "react";
 import { useState, useRef } from "react";
-import { flow, extend, wait, trigger, set, request, DispatchActions, StagingFunction, ScenariosContext, scenarios, PlayPause } from "@flowcards/core";
+import { extend, waitFor, trigger, set, request, StagingFunction, ScenariosContext, ScenariosDispatch, Scenarios, UpdateCallback, scenario } from "@flowcards/core";
 import "./styles.scss";
 import { Flow } from './Flow';
 import { ActionControl } from "./Components/ActionControl/ActionControl";
-import { EventDispatcher } from "./Components/EventDispatcher/EventDispatcher";
 
-export function useScenarios(stagingFunction: StagingFunction): [ScenariosContext, DispatchActions, PlayPause] {
-  const [state, setState] = useState<ScenariosContext>();
-  const ref = useRef<[ScenariosContext, DispatchActions, PlayPause] | null>(null);
-  if(ref.current === null) {
-      ref.current = scenarios(stagingFunction, (a: ScenariosContext): void => { setState(a) })
+export function useScenarios(stagingFunction: StagingFunction, dependencies: any[]): [ScenariosContext, ScenariosDispatch] {
+  const [context, setContext] = useState<ScenariosContext>();
+  const scenariosRef = useRef<Scenarios | null>(null);
+  React.useMemo(() => {
+      if(scenariosRef.current !== null) { 
+          // do not run this for the initial dependencies
+          scenariosRef.current.dispatch({type: 'contextChange'});
+      }
+  }, dependencies);
+  if(scenariosRef.current === null) { 
+      // only to this once
+      const updateCallback: UpdateCallback = (newContext: ScenariosContext) => { setContext(newContext) }
+      scenariosRef.current = new Scenarios(stagingFunction, updateCallback);
   }
-  return [state || ref.current[0], ref.current[1], ref.current[2]];
+  return [context || scenariosRef.current.initialScenariosContext, scenariosRef.current.dispatch];
 }
 
 function delay(ms: number, value?: any) {
@@ -20,9 +27,9 @@ function delay(ms: number, value?: any) {
 }
 
 
-const flow1 = flow(
+const flow1 = scenario(
   {
-    name: "Flow 1", description: "this is flow 1"
+    id: "Flow 1", description: "this is flow 1"
   },
   function*(this: any) {
     this.section('firstSection');
@@ -30,15 +37,15 @@ const flow1 = flow(
     this.section('secondSection');
     yield request("WaitForCard 2", () => delay(2000));
     this.section('endSection');
-    yield wait("completeMe");
+    yield waitFor("completeMe");
     this.section(undefined);
-    yield wait('ui action', (value: number) => ({isValid: value !== undefined && value < 100, message: 'provide a number value smaller than 100'}));
+    yield waitFor('ui action', (value: number) => ({isValid: value !== undefined && value < 100, message: 'provide a number value smaller than 100'}));
   }
 );
 
-const flow2 = flow(
+const flow2 = scenario(
   {
-    name: "Flow 2",
+    id: "Flow 2",
     description: "extend flow"
   },
   function*() {
@@ -51,10 +58,9 @@ const flow2 = flow(
   }
 );
 
-const flow3 = flow(
+const flow3 = scenario(
   {
-    name: "Flow 3",
-    key: "1",
+    id: "Flow 3",
     description: "trigger flow"
   },
   function*() {
@@ -71,14 +77,13 @@ function iconPause(isActive: boolean) {
 }
 
 export default function App() {
-  const [context, dispatchActions, playPause] = useScenarios(enable => {
+  const [context, dispatchActions] = useScenarios(enable => {
     enable(flow1());
     const flow2State = enable(flow2());
     if(flow2State.isCompleted) {
       enable(flow3());
     }
-    
-  });
+  }, []);
   const [highlightActionIndex, setHighlightActionIndex] = useState<number | undefined>(undefined);
   
   let flows: any[] = [];
