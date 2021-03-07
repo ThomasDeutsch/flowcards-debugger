@@ -1,7 +1,8 @@
 import * as React from "react";
-import { BThreadState, BThreadReaction, BThreadReactionType, Bid, ScaffoldingResultType, PendingEventInfo, EventMap, EventId, EventContext } from "@flowcards/react";
+import { BThreadState, BThreadReaction, BThreadReactionType, Bid, ScaffoldingResultType, EventMap } from "./fcReact";
 
 export interface FlowProps {
+    state: BThreadState;
     highlightActionIndex? :number;
     currentActionIndex: number;
     bThreadReactionHistory?: Map<number, BThreadReaction>, 
@@ -14,30 +15,19 @@ interface BThreadSection {
     reactions: BThreadReaction[];
 }
 
-function getCurrentRun(scaffoldingHistory: Map<number, ScaffoldingResultType>, reactionHistory: Map<number, BThreadReaction>, highlightActionIndex?: number): undefined | [Map<number, BThreadReaction>, number, number] {
-    let fromIndex: number | undefined, toIndex: number | undefined;
-    let total = 0;
-    let current = 0;
-    scaffoldingHistory.forEach((type, index) => {
-        if(type === ScaffoldingResultType.init) {
-            if(current === 0) fromIndex = index;
-            else if(current === total) toIndex = index-1;
-            total++;
-        }
-        if(highlightActionIndex === undefined || highlightActionIndex === index) {
-            current = total;
-        }
-    });
-    if(fromIndex === undefined) return undefined;
+function getReactions(reactionHistory?: Map<number, BThreadReaction>): undefined | Map<number, BThreadReaction> {
     let history = new Map<number, BThreadReaction>();
-    reactionHistory.forEach((reaction, index) => {
-        if(index >= fromIndex! && toIndex ? index <= toIndex! : true) history.set(index,reaction);
+    reactionHistory?.forEach((reaction, index) => {
+        history.set(index,reaction);
     });
-    return [history, current, total];
+    return history || new Map();
 }
 
-function partitionBySection(reactions?: Map<number, BThreadReaction>): BThreadSection[] {
+function partitionBySection(reactions?: Map<number, BThreadReaction>, currentSection?: string): BThreadSection[] {
     const sections: BThreadSection[] = [];
+    if((!reactions || reactions.size === 0) && currentSection ) {
+        sections.push({title: currentSection, reactions: []})
+    }
     reactions?.forEach((reaction) =>  {
         if(sections.length === 0) {
             sections.push({title: reaction.nextState.section, reactions: [reaction]});
@@ -51,50 +41,76 @@ function partitionBySection(reactions?: Map<number, BThreadReaction>): BThreadSe
     return sections;
 }
 
-function getStateForIndex(bThreadReactionHistory: Map<number, BThreadReaction>, index: number): BThreadState | undefined {
+function getStateForIndex(index: number, bThreadReactionHistory?: Map<number, BThreadReaction>): BThreadState | undefined {
     while(index >= 0) {
-        const reaction = bThreadReactionHistory.get(index);
+        const reaction = bThreadReactionHistory?.get(index);
         if(reaction) return reaction.nextState;
-        index = index-1;
+        index--;
     }
     return undefined
 }
 
-export function Flow({bThreadScaffoldingHistory, bThreadReactionHistory, pendingHistory, currentActionIndex, highlightActionIndex}: FlowProps) {
-    if(!bThreadScaffoldingHistory || !bThreadReactionHistory) return undefined;
-    const state = getStateForIndex(bThreadReactionHistory!, highlightActionIndex || currentActionIndex);
-    if(state === undefined) return null;
+export function Flow({state, bThreadScaffoldingHistory, bThreadReactionHistory, currentActionIndex, highlightActionIndex}: FlowProps) {
+    if(!bThreadScaffoldingHistory) return undefined;
+    //const highlightState = getStateForIndex(highlightActionIndex, state);
+    const isEnabledClass = bThreadScaffoldingHistory.get(highlightActionIndex || currentActionIndex) ? 'enabled' : '';
     const flowHeader = <div className="header">
-        <div className="title">{state?.id.name} {state?.id.key} {state.description} {state.isCompleted ? ' (completed)' : null}</div>
-    </div>;
-    const currentRun = getCurrentRun(bThreadScaffoldingHistory, bThreadReactionHistory, highlightActionIndex || currentActionIndex);
-    if(!currentRun) return flowHeader;
-    const sectionedRuns = partitionBySection(currentRun[0]).map(section => {
-        const reactions = section.reactions.map(reaction => {
+        <div className="title">
+            <span>{state?.isCompleted ? ' ✅' : null} {state?.id.name} {state?.id.key} </span> 
+            <span className="description">{state?.description}</span>
+        </div>
+    </div>
+    const reactions = getReactions(bThreadReactionHistory);
+    const askForBids: string[] = [];
+    const waitForBids: string[] = [];
+    state.bids?.askFor?.forEach(bid => {
+        askForBids.push(bid.name); // TODO: use EventName Component?
+    })
+    state.bids?.waitFor?.forEach(bid => {
+        waitForBids.push(bid.name); // TODO: use EventName Component?
+    })
+
+    if(!reactions) {
+        return <div key={state?.id.name} className={"flow " + isEnabledClass}>
+            {flowHeader}
+            <div className="reactions">
+                { askForBids.length > 0 && <span className="bid asking">{askForBids.join(', ')}</span>}
+                { waitForBids.length > 0 && <span className="bid waiting">{waitForBids.join(', ')}</span>}
+            </div>
+        </div>;
+    }
+
+    const sections = partitionBySection(reactions, state.section);
+    const sectionedRuns = sections.map((section, sectionIndex) => {
+        const isCurrentSection = sections.length-1 === sectionIndex;
+        const reactions = section.reactions.map((reaction, index) => {
+            const isPastHighlight = highlightActionIndex !== undefined && reaction.actionId > highlightActionIndex;
             if(reaction.type === BThreadReactionType.newPending) {
-                const pending = state.pending.get(reaction.bid.eventId);
-                if(pending === undefined) return undefined;
-                if(pending.actionId !== reaction.actionId) return undefined;
+                if(isPastHighlight) return undefined;
+                const hasProgressed = section.reactions.slice(index+1).some(reaction => reaction.type !== BThreadReactionType.newPending);
+                if(hasProgressed) return undefined;
             }
             if(reaction.type === BThreadReactionType.progress || reaction.type === BThreadReactionType.newPending) {
-                const isPending = pendingHistory.get(highlightActionIndex || currentActionIndex)?.has(reaction.bid.eventId)
                 const classBidType = reaction.bid.type;
-                const classPending = isPending ? 'pending' : '';
-                const classPastHightlight = highlightActionIndex !== undefined && reaction.actionId > highlightActionIndex ? 'pastHighlightActionIndex' : '';
-                if(classPending && classPastHightlight) return undefined
+                const classReactionType = `reactionType_${reaction.type}`
+                const classPastHightlight = isPastHighlight && 'pastHighlightActionIndex';
                 const classHighlightAction = highlightActionIndex && reaction.actionId === highlightActionIndex ? 'current' : '';
-                const classes = `bid ${classBidType} ${classPastHightlight} ${classPending} ${classHighlightAction}`
+                const classes = `bid ${classBidType} ${classPastHightlight} ${classReactionType} ${classHighlightAction}`
             return <span className={classes} key={reaction.actionId}>{reaction.bid.eventId.name}</span>;
-            } 
+            }
         });
         return <div className="section">
             <div className="title">{section.title}</div>
-            <div className="reactions">{reactions}</div>
+            <div className="reactions">
+                {reactions}
+                { isCurrentSection && askForBids.length > 0 && <span className="bid asking">{askForBids.join(', ')}</span>}
+                { isCurrentSection && waitForBids.length > 0 && <span className="bid waiting">{waitForBids.join(', ')}</span>}
+            </div>
         </div>
     });
 
     return (
-        <div key={state.id.name} className="flow">
+        <div key={state.id.name} className={"flow " + isEnabledClass}>
             {flowHeader}
             <div className="sections">
                 {sectionedRuns}

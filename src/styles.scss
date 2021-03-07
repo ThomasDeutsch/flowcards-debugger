@@ -4,10 +4,11 @@
 
 .App {
   display: flex;
+
+  .flows {
+    padding-left: 1em;
+  }
 }
-
-
-
 
 .flow {
   font-family: Verdana, Geneva, Tahoma, sans-serif;
@@ -21,6 +22,8 @@
     }
     .description {
       font-size: 13px;
+      font-style: italic;
+      opacity: 0.8;
     }
   }
   .sections {
@@ -61,6 +64,15 @@
   border: 1px solid black;
   border-radius: 3px;
 
+  &.asking, &.waiting {
+    opacity: 0.8;
+    border-color: #6c8297;
+    color: black;
+    &::before{
+      content: '?: '
+    }
+  }
+
   &.pastHighlightActionIndex {
     opacity: 0.4;
   }
@@ -69,11 +81,11 @@
     font-weight: bold;
   }
   
-  &.wait {
+  &.askFor {
     background-color: #b1d3f6;
     border-color: #6c8297;
   }
-  &.on {
+  &.wait {
     background-color: #b1d3f6;
     border-color: #5e7183
   }
@@ -93,7 +105,7 @@
     background-color: #ecb6be;
     border-color: #c25364;
   }
-  &.pending {
+  &.reactionType_newPending {
     border-style: dashed;
     border-color: black;
   }

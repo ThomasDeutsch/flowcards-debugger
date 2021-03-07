@@ -9,12 +9,18 @@ interface EventDispatcherProps {
 export function EventDispatcher({bids, event}: EventDispatcherProps) {
     const [selectedEvent, selectEvent] = React.useState<EventId | undefined>(undefined);
     const [payload, setPayload] = React.useState<any>(undefined);
-    const validation = selectedEvent && event(selectedEvent).validate(payload);
-    const dispatch = selectedEvent && event(selectedEvent) ? event(selectedEvent).dispatch : undefined
+    const eventContext = selectedEvent && event(selectedEvent)
+    const validation = selectedEvent && eventContext && eventContext.validate(payload);
+    const dispatch = selectedEvent && eventContext ? eventContext.dispatch?.bind(eventContext) : undefined
 
     let askFors: any[] = [];
     bids.askFor?.forEach((eventId) => {
-        askFors.push(<button onClick={() => selectEvent(eventId)}>{eventId.name} {eventId.key}</button>);
+        askFors.push(
+            <div key={eventId.name + eventId.key} className="nextAction" onClick={() => selectEvent(eventId)}>
+                <input type="radio" name="nextEvent" checked={selectedEvent?.name === eventId.name && selectedEvent.key === eventId.key}/>
+                <label>{eventId.name} {eventId.key} </label>
+            </div>
+        );
     });
  
     const input = selectedEvent ? <div>
@@ -23,11 +29,14 @@ export function EventDispatcher({bids, event}: EventDispatcherProps) {
             selectEvent(undefined);
             if(dispatch) dispatch(payload)
             }}>dispatch</button>
-    </div> : null
+    </div> : null;
 
     return <div className="eventDispatcher">
-        {askFors}
-        {input}
+        <div>
+            <b className="nextActionHeadline">next action:</b>
+            {askFors}
+        </div>
+            {input}
         <ul className="validationMessages">
             {validation?.required.map(x => <li>{x.map(y => 
             <li className={y.isValid ? 'validation valid' : 'validation invalid'}>{y.message}</li>)}</li>)}

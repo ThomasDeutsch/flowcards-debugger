@@ -16,3 +16,15 @@
         color: darkred;
     }
 }
+.nextActionHeadline {
+    font-size: 12px;
+    font-style: italic;
+}
+.nextAction {
+    input[type=radio] {
+        height: 13px;
+    }
+    label {
+        font-size: 13px;
+    }
+}
