@@ -17,7 +17,7 @@ export function EventDispatcher({bids, event}: EventDispatcherProps) {
     bids.askFor?.forEach((eventId) => {
         askFors.push(
             <div key={eventId.name + eventId.key} className="nextAction" onClick={() => selectEvent(eventId)}>
-                <input type="radio" name="nextEvent" checked={selectedEvent?.name === eventId.name && selectedEvent.key === eventId.key}/>
+                <input type="radio" value={payload} name="nextEvent" checked={selectedEvent?.name === eventId.name && selectedEvent.key === eventId.key}/>
                 <label>{eventId.name} {eventId.key} </label>
             </div>
         );
@@ -27,7 +27,10 @@ export function EventDispatcher({bids, event}: EventDispatcherProps) {
         <input onChange={(e) => {setPayload(e.target.value)}}></input>
         <button disabled={validation?.isValid === false}  onClick={() => {
             selectEvent(undefined);
-            if(dispatch) dispatch(payload)
+            if(dispatch) {
+                dispatch(payload);
+                setPayload(undefined);
+            }
             }}>dispatch</button>
     </div> : null;
 
