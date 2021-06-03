@@ -1,6 +1,10 @@
 {
   "include": [
-    "./src/*", "src/Components/ActionControl", "src/ActionControlComponent/ActionControl.tsx", "src/Components/EventDispatcher/EventDispatcher.tsx"
+    "./src/*",
+    "src/Components/ActionControl",
+    "src/ActionControlComponent/ActionControl.tsx",
+    "src/Components/EventDispatcher/EventDispatcher.tsx",
+    "src/Components/Flow/Flow.tsx"
   ],
   "compilerOptions": {
     "strict": true,
@@ -9,7 +13,7 @@
       "dom",
       "es2015"
     ],
-    "jsx": "react",
+    "jsx": "react-jsx",
     "target": "es5",
     "allowJs": true,
     "skipLibCheck": true,
@@ -19,6 +23,7 @@
     "moduleResolution": "node",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "noEmit": true
+    "noEmit": true,
+    "noFallthroughCasesInSwitch": true
   }
 }

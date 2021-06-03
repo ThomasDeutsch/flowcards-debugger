@@ -1,0 +1,61 @@
+.icon {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border: 1px solid black;
+
+    &--UI {
+        background-color: #b1d3f6;
+        border-color: #6c8297;
+    }
+
+    &--Set {
+        background-color: #ffb87a;
+        border-color: #8a6341
+    }
+
+    &--Request {
+        background-color: #fff9b2;
+        border-color: #b9b682;
+    }
+
+    &--Trigger {
+        background-color: #c7a2ce;
+        border-color: #856c8a;
+    }
+
+    &--Pending {
+        border-style: dashed;
+        border-color: black;
+    }
+}
+
+
+// &.askFor {
+//     background-color: #b1d3f6;
+//     border-color: #6c8297;
+//   }
+//   &.wait {
+//     background-color: #b1d3f6;
+//     border-color: #5e7183
+//   }
+//   &.set {
+//     background-color: #ffb87a;
+//     border-color: #8a6341
+//   }
+//   &.request {
+//     background-color: #fff9b2;
+//     border-color: #b9b682;
+//   }
+//   &.trigger {
+//     background-color: #c7a2ce;
+//     border-color: #856c8a;
+//   }
+//   &.extend {
+//     background-color: #ecb6be;
+//     border-color: #c25364;
+//   }
+//   &.pending {
+//     border-style: dashed;
+//     border-color: black;
+//   }

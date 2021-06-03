@@ -5,16 +5,16 @@
   "keywords": [],
   "main": "src/index.tsx",
   "dependencies": {
-    "@flowcards/core": "0.15.5",
+    "@flowcards/core": "1.0.8",
     "node-sass": "^4.14.1",
     "react": "^16.12.0",
     "react-dom": "^16.12.0",
-    "react-scripts": "^3.4.1"
+    "react-scripts": "4.0.3"
   },
   "devDependencies": {
     "@types/react": "16.9.19",
     "@types/react-dom": "16.9.5",
-    "typescript": "3.7.5"
+    "typescript": "4.2.3"
   },
   "scripts": {
     "start": "react-scripts start",

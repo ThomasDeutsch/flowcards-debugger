@@ -1,76 +1,62 @@
 import * as React from "react";
-import { EventName } from '../EventName/EventName';
+import { ActionElement } from '../Action/ActionElement';
 import { EventDispatcher } from '../EventDispatcher/EventDispatcher';
-import { Action, ActionType, ActionWithId, DispatchCommand, Scenarios, ScenariosContext } from '@flowcards/core';
-
-
-
-interface ActionCustomization {
-    mockAPI: boolean;
-    delay: boolean;
-}
-
-function getResolveActionIndex(actions: Action[], highlightActionIndex?: number) {
-    if(highlightActionIndex === undefined) return;
-    return actions[highlightActionIndex].resolveActionId;
-}
+import { AnyActionWithId, BidsByType, DispatchCommand, EventContext, EventId } from '@flowcards/core';
 
 function delay(ms: number, value?: any) {
     return new Promise(resolve => setTimeout(() => resolve(value), ms));
 }
 
-function getAction(action: Action, index: number, actions: ActionWithId[]): ActionWithId {
-    if(action.resolveActionId) {
-        const resolveAction = actions[action.resolveActionId];
-        if(!resolveAction) {
-            return action as ActionWithId;
-        }
-        action.payload = () => delay(resolveAction.resolve!.requestDuration, resolveAction.payload);
-    }
-    return action as ActionWithId;
-}
+// function getAction(action: AnyActionWithId, actions: AnyActionWithId[]): AnyActionWithId {
+//     if(action.resolveActionId) {
+//         const resolveAction = actions[action.resolveActionId];
+//         if(!resolveAction) {
+//             return action;
+//         }
+//         action.payload = () => delay(resolveAction.resolve!.requestDuration, resolveAction.payload);
+//     }
+//     return action;
+// }
 
 
 
-function startReplay(dispatch: DispatchCommand, actions: ActionWithId[]) {
-    const replayActions = actions.slice(0, actions.length + 1);
-    const actionsWithId = replayActions.map(getAction).filter(a => !(a.type === ActionType.resolved)); //TODO:  do not replay the extend-resolve! ???
-    dispatch({type: 'replay', actions: actionsWithId});
-}
+// function startReplay(dispatch: DispatchCommand, actions: ActionWithId[]) {
+//     const replayActions = actions.slice(0, actions.length + 1);
+//     const actionsWithId = replayActions.map(getAction).filter(a => !(a.type === ActionType.resolved)); //TODO:  do not replay the extend-resolve! ???
+//     dispatch({type: 'replay', actions: actionsWithId});
+// }
 
 
 interface ActionControlProps {
-    context: ScenariosContext;
+    loggedActions: AnyActionWithId[];
+    bids: BidsByType,
+    event: (eventName: string | EventId) => EventContext,
     dispatchActions: DispatchCommand;
-    setHighlightActionIndex: (x: number | undefined) => void;
-    highlightActionIndex?: number;
+    setHighlightActionId: (x: number | undefined) => void;
+    highlightActionId?: number;
 }
 
-export function ActionControl({setHighlightActionIndex, dispatchActions, context}: ActionControlProps) {
+export function ActionControl({setHighlightActionId, dispatchActions, loggedActions, bids, event}: ActionControlProps) {
     return <div className="actionControl">
         <EventDispatcher
-          bids={context.bids}
-          event={context.event}
+          bids={bids}
+          event={event}
         ></EventDispatcher>
-        <ul onMouseLeave={() => setHighlightActionIndex(undefined)}  className="actionList">
+        <ul onMouseLeave={() => setHighlightActionId(undefined)}  className="actionList">
             <div className="actionLogHeadline">action log</div>
-            {context.log.actions.map(action => {
+            {loggedActions.map(action => {
                 const actionId = action.id !== undefined && action.id !== null ? action.id : undefined;
                 return <li 
                     className="action"
-                    onMouseEnter={() => setHighlightActionIndex(actionId)}>
-                    <EventName 
-                        actionId={action.id} 
-                        eventId={(action.eventId)} 
-                        actionType={action.type}
-                        bidType={action.bidType}
-                        ></EventName>
+                    onClick={() => console.log('action: ', action)}
+                    onMouseEnter={() => setHighlightActionId(actionId)}>
+                    <ActionElement action={action} isCurrentlyPending={bids.pending?.has(action.eventId)}/>
                 </li>
             })}
-            {context.log.actions.length === 0 && <li>-</li>}
+            {loggedActions.length === 0 && <li>-</li>}
         </ul>
-        <div className="actionReplay">
-            <button type="button" onClick={() => startReplay(dispatchActions, context.log.actions)}>Replay</button>
-        </div>
+        {/* <div className="actionReplay">
+            <button type="button" onClick={() => startReplay(dispatchActions, loggedActions)}>Replay</button>
+        </div> */}
     </div>
 }

@@ -15,6 +15,7 @@ export function EventDispatcher({bids, event}: EventDispatcherProps) {
 
     let askFors: any[] = [];
     bids.askFor?.forEach((eventId) => {
+        if(bids.pending?.has(eventId)) return;
         askFors.push(
             <div key={eventId.name + eventId.key} className="nextAction" onClick={() => selectEvent(eventId)}>
                 <input type="radio" value={payload} name="nextEvent" checked={selectedEvent?.name === eventId.name && selectedEvent.key === eventId.key}/>

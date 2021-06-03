@@ -1,8 +1,8 @@
 import * as React from "react";
-import { useState, useRef } from "react";
-import { extend, waitFor, trigger, set, request, StagingFunction, ScenariosContext, Scenarios, UpdateCallback, scenario, askFor, BThread, BThreadContext } from "@flowcards/core";
+import { useState } from "react";
+import { extend, set, request, scenario, askFor, BThreadContext, block } from "@flowcards/core";
 import "./styles.scss";
-import { Flow } from './Flow';
+import { Flow } from './Components/Flow/Flow';
 import { ActionControl } from "./Components/ActionControl/ActionControl";
 import { useScenarios } from "./fcReact";
 
@@ -12,13 +12,11 @@ export function delay(ms: number, value?: any): Promise<any> {
 
 const flow1 = scenario(
   {
-    id: "Flow 1 - user login", description: "user can sign in / out",
-    autoRepeat: true
+    id: "Flow 1 - user login", description: "user can sign in / out"
   },
   function*(this: BThreadContext) {
     this.section('login process');
     const userName = yield askFor("login", (value: string) => ({isValid: value !== undefined && value.length > 3, message: 'user-name needs more than 3 characters'}));
-    console.log('logged in user: ', userName);
     yield request("loginUser", () => delay(2000, userName));
     yield set("userLoggedIn", userName);
     this.section('user logged in');
@@ -29,30 +27,56 @@ const flow1 = scenario(
 const flow2 = scenario(
   {
     id: "Flow 2 - reserve ticket",
-    description: "user can reserve a ticket",
-    autoRepeat: true
+    description: "user can reserve a ticket"
   },
   function*(this: BThreadContext) {
     this.section('product-list');
     const ticketNumber = yield askFor('select ticket', (value: number) => ({isValid: value !== undefined && value > 0 && value <= 10, message: 'ticket id between 0 and 10'}));
     yield request('get ticket details', () => delay(2000, 'ticket details'));
     this.section('ticket-details: ' + ticketNumber);
-    const [type, val] = yield [askFor('reserve ticket'), askFor('back to product-list')];
+    const [type] = yield [askFor('reserve ticket'), askFor('back to product-list')];
     if(type === 'reserve ticket') {
       yield request('api reserve ticket', () => delay(2000));
-      yield set('userReservedTicket', ticketNumber);
+      yield set('ticket reserved');
     } 
   }
 );
+
+const flow3 = scenario(
+  {
+    id: "Flow 3 - user name restricted",
+    description: "user name can not be longer than 10 characters"
+  },
+  function*(this: BThreadContext) {
+    yield block('login', (value: string) => ({isValid: value?.length > 10, message: 'user-name needs to smaller chan 10 characters'}));
+  }
+)
+
+const flow4 = scenario(
+  {
+    id: "Flow 4 - confirm reservation",
+    description: "user needs to confirm ticket-reservation"
+  },
+  function*(this: BThreadContext) {
+    const e = yield extend('reserve ticket');
+    yield askFor('confirm reservation');
+    // viel Arbeit.... model-aligned
+    e.resolve('ok');
+  }
+)
 
 export default function App() {
   const [context, dispatchActions] = useScenarios(enable => {
     const isUserLoggedIn = enable(flow1()).section === ('user logged in');
     if(isUserLoggedIn) {
       enable(flow2());
+      enable(flow4())
+    } else {
+      enable(flow3());
     }
   }, []);
-  const [highlightActionIndex, setHighlightActionIndex] = useState<number | undefined>(undefined);
+
+  const [highlightActionId, setHighlightActionId] = useState<number | undefined>(undefined);
   
   let flows: any[] = [];
   context.thread.forEach((state, bThreadId) => {
@@ -62,22 +86,23 @@ export default function App() {
       state: state,
       bThreadReactionHistory: bThreadReactionHistory, 
       bThreadScaffoldingHistory: bThreadScaffoldingHistory,
-      pendingHistory: context.log.pendingHistory,
-      highlightActionIndex: highlightActionIndex,
-      currentActionIndex: context.log.actions.length-1
+      highlightActionId: highlightActionId,
+      currentActionId: context.log.actions.length-1
     });
   });
   return (
     <div className="App">
         <div className="actionControl">
           <ActionControl
-            context={context}
+            bids={context.bids}
+            event={context.event}
+            loggedActions={context.log.actions}
             dispatchActions={dispatchActions}
-            setHighlightActionIndex={setHighlightActionIndex}
-            highlightActionIndex={highlightActionIndex} />
+            setHighlightActionId={setHighlightActionId}
+            highlightActionId={highlightActionId} />
         </div>
         <div className="flows">
-        {flows}
+          {flows}
         </div>
     </div>
   );
